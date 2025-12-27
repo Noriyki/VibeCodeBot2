@@ -1,9 +1,6 @@
 import telebot
 from telebot import types
-import sqlite3
 import problem
-import data
-import admin
 from admin import admin_panel,broadcast
 
 TOKEN = "7412087237:AAHzrnzI_o2-tE_6VkjE1vJAzbJqwPEUUWk"
@@ -42,6 +39,7 @@ def daily_problem_handler(message):
         message.chat.id,
         "Введите рейтинг задачи, например: /problem 1000"
     )
+
 
 
 @bot.message_handler(commands=["problem"])
