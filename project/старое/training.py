@@ -1,11 +1,6 @@
 import random
-import telebot
 import requests
-import sqlite3
 import telebot
-from telebot import types
-import problem
-from telebot.util import user_link
 
 TOKEN = "7412087237:AAHzrnzI_o2-tE_6VkjE1vJAzbJqwPEUUWk"
 bot = telebot.TeleBot(TOKEN)

@@ -1,6 +1,6 @@
 .env
 *.db
-__pycache__/
+pycache/
 *.pyc
 venv/
-.vscode/
+.vscode
