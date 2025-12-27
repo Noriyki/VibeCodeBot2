@@ -1,4 +1,3 @@
-
 import sqlite3
 from telebot import TeleBot
 ADMIN_ID = [1479190231,1162481819,1220983765]
