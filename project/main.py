@@ -1,88 +1,158 @@
+
+import time
+import threading
+import schedule
 import telebot
 from telebot import types
-from handlers import problems
-from handlers import admin
-from
+from dotenv import load_dotenv
 import os
-bot = os.getenv("BOT_TOKEN")
+load_dotenv()
+from services.everyday import (
+    set_daily_rating,
+    get_daily_problem_text,
+    mark_daily_done,
+)
+from services.problem_picker import get_problem_by_rating
+from DB.core import init_db, add_or_update_user, get_connection
 
-init_db()
 
-@bot.message_handler(commands=['start'])
-def start_handler(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    btn1 = types.KeyboardButton('Ссылка на доступ к сайту')
-    markup.row(btn1)
-    btn2 = types.KeyboardButton('Турниры')
-    btn3 = types.KeyboardButton('Моя сегодняшняя задача')
-    markup.row(btn2, btn3)
+# ================== CONFIG ==================
 
-    bot.send_message(
-        message.chat.id,
-        'Привет! Выбирай то, что тебе нужно:',
-        reply_markup=markup
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+DAILY_TIME = "09:00"
+
+bot = telebot.TeleBot(BOT_TOKEN)
+
+
+# ================== HELPERS ==================
+
+def get_user_data(message: types.Message):
+    user_id = message.from_user.id
+    username = (
+        message.from_user.username
+        or message.from_user.first_name
+        or "user"
     )
+    chat_id = message.chat.id
+    return user_id, username, chat_id
 
 
-@bot.message_handler(func=lambda message: message.text == 'Ссылка на доступ к сайту')
-def send_codeforces_link(message):
-    markup = types.InlineKeyboardMarkup()
-    btn = types.InlineKeyboardButton('Codeforces', url='https://codeforces.com/')
-    markup.add(btn)
-    bot.send_message(message.chat.id, 'Переходи по ссылке:', reply_markup=markup)
-
-
-@bot.message_handler(func=lambda message: message.text == 'Моя сегодняшняя задача')
-def daily_problem_handler(message):
-    bot.send_message(
-        message.chat.id,
-        "Введите рейтинг задачи, например: /problem 1000"
-    )
-
-
-@bot.message_handler(commands=["problem"])
-def problem_command_handler(message):
+def remember_chat(message: types.Message):
+    """Сохраняем chat_id для авторассылки."""
+    user_id, username, chat_id = get_user_data(message)
     try:
-        parts = message.text.split()
-        if len(parts) < 2:
-            bot.send_message(message.chat.id, "Использование: /problem <рейтинг>\nПример: /problem 1000")
-            return
+        add_or_update_user(user_id, username, chat_id=chat_id)
+    except TypeError:
+        pass
 
-        rating = int(parts[1])
-        if rating % 100 != 0 or rating < 800 or rating > 3500:
-            bot.send_message(
-                message.chat.id,
-                "Рейтинг должен быть кратным 100 и в диапазоне 800-3500\nПример: 800, 900, 1000, ..."
-            )
-            return
 
-        user_id = message.from_user.id
-        username = message.from_user.username or f"user_{user_id}"
-        result = problem.get_problem_by_rating(rating, user_id, username)
-        bot.send_message(message.chat.id, result, parse_mode="Markdown")
-
+def safe_int(value: str):
+    try:
+        return int(value)
     except ValueError:
-        bot.send_message(message.chat.id, "Пожалуйста, укажите число. Например: /problem 1000")
+        return None
 
 
-@bot.message_handler(commands=["admin"])
-def handle_admin_panel(message):
-    admin_panel(message)
+# ================== DAILY SCHEDULER ==================
+
+def send_daily_to_all_users():
+    con = get_connection()
+    cur = con.cursor()
+    cur.execute("SELECT id, username, chat_id FROM Users WHERE chat_id IS NOT NULL")
+    users = cur.fetchall()
+    con.close()
+
+    for user_id, username, chat_id in users:
+        try:
+            text = get_daily_problem_text(user_id, username)
+            bot.send_message(chat_id, text)
+        except Exception as e:
+            print(f"Не удалось отправить {user_id}: {e}")
 
 
-@bot.message_handler(commands=["broadcast"])
-def handle_broadcast(message):
-    broadcast(message)
+def scheduler_loop():
+    schedule.every().day.at(DAILY_TIME).do(send_daily_to_all_users)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
 
-@bot.message_handler(func=lambda message: True)
-def handle_other_messages(message):
-    if message.text == 'Турниры':
-        bot.send_message(message.chat.id, "Функция турниров в разработке 🚧")
-    else:
-        bot.send_message(message.chat.id, "Используйте кнопки меню или команды")
+# ================== COMMANDS ==================
 
+@bot.message_handler(commands=["start", "help"])
+def start(message: types.Message):
+    remember_chat(message)
+    bot.reply_to(
+        message,
+        "Команды:\n"
+        "/one <rating>\n"
+        "/daily_rating <rating>\n"
+        "/daily\n"
+        "/done"
+    )
+
+
+@bot.message_handler(commands=["one"])
+def one(message: types.Message):
+    remember_chat(message)
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        bot.reply_to(message, "Использование: /one <rating>")
+        return
+
+    rating = safe_int(parts[1])
+    if rating is None:
+        bot.reply_to(message, "Рейтинг должен быть числом")
+        return
+
+    user_id, username, chat_id = get_user_data(message)
+    text = get_problem_by_rating(rating, user_id, username)
+    bot.send_message(chat_id, text)
+
+
+@bot.message_handler(commands=["daily_rating"])
+def daily_rating(message: types.Message):
+    remember_chat(message)
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        bot.reply_to(message, "Использование: /daily_rating <rating>")
+        return
+
+    rating = safe_int(parts[1])
+    if rating is None:
+        bot.reply_to(message, "Рейтинг должен быть числом")
+        return
+
+    user_id, username, _ = get_user_data(message)
+    set_daily_rating(user_id, username, rating)
+    bot.reply_to(message, f"Ок. Ежедневный рейтинг: {rating}")
+
+
+@bot.message_handler(commands=["daily"])
+def daily(message: types.Message):
+    remember_chat(message)
+    user_id, username, chat_id = get_user_data(message)
+    bot.send_message(chat_id, get_daily_problem_text(user_id, username))
+
+
+@bot.message_handler(commands=["done"])
+def done(message: types.Message):
+    remember_chat(message)
+    user_id, _, _ = get_user_data(message)
+    count = mark_daily_done(user_id)
+    bot.reply_to(message, f"Засчитано! В этом месяце: {count}")
+
+
+# ================== MAIN ==================
 
 if __name__ == "__main__":
+    init_db()
+
+    threading.Thread(
+        target=scheduler_loop,
+        daemon=True
+    ).start()
+
     print("Бот запущен...")
-    bot.polling(none_stop=True)
+    bot.infinity_polling()

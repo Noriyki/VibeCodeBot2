@@ -1,6 +1,6 @@
 import telebot
 from telebot import types
-from VibeCodeBot.project import problem
+from VibeCodeBot.project.services import oldproblem
 from admin import admin_panel,broadcast
 
 TOKEN = "7412087237:AAHzrnzI_o2-tE_6VkjE1vJAzbJqwPEUUWk"
@@ -61,7 +61,7 @@ def problem_command_handler(message):
 
         user_id = message.from_user.id
         username = message.from_user.username or f"user_{user_id}"
-        result = problem.get_problem_by_rating(rating, user_id, username)
+        result = oldproblem.get_problem_by_rating(rating, user_id, username)
         bot.send_message(message.chat.id, result, parse_mode="Markdown")
 
     except ValueError:

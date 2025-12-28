@@ -1,4 +1,3 @@
-
 import requests
 
 
@@ -8,24 +7,22 @@ def get_all_problems():
         url = "https://codeforces.com/api/problemset.problems"
         response = requests.get(url, timeout=10)
         response.raise_for_status()
-        data = response.json()
 
-        if data["status"] != "OK":
+        data = response.json()
+        if data.get("status") != "OK":
             return None
 
-        return data["result"]
+        return data.get("result")
     except requests.exceptions.RequestException:
         return None
     except Exception:
         return None
 
 
-def get_problems_by_rating(rating):
-
+def get_problems_by_rating(rating: int):
     data = get_all_problems()
     if not data:
         return []
 
-    problems = data["problems"]
-    # Фильтруем задачи по рейтингу (как в оригинальном problem.py)
+    problems = data.get("problems", [])
     return [p for p in problems if p.get("rating") == rating]
