@@ -1,7 +1,7 @@
 import random
 import requests
-from VibeCodeBot.project.services.CodeforceApi import get_problems_by_rating
-from VibeCodeBot.project.DB import add_or_update_user
+from VibeCodeBot.services.CodeforceApi import get_problems_by_rating
+from VibeCodeBot.DB import add_or_update_user
 
 
 

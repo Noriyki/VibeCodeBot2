@@ -1,8 +1,13 @@
+import time
+import schedule
+import telebot
 import datetime as dt
+from VibeCodeBot.config import BOT_TOKEN, DAILY_TIME
+from VibeCodeBot.DB import get_connection, add_or_update_user
+from VibeCodeBot.services.problem_picker import pick_random_by_rating, format_problem
 
-from VibeCodeBot.project.DB import get_connection, add_or_update_user
-from VibeCodeBot.project.services.problem_picker import pick_random_by_rating, format_problem
-
+# Используем токен из config.py
+bot = telebot.TeleBot(BOT_TOKEN)
 
 def set_daily_rating(user_id: int, username: str, rating: int):
     """Пользователь выбирает рейтинг ежедневной задачи."""
@@ -97,3 +102,27 @@ def mark_daily_done(user_id: int) -> int:
     con.commit()
     con.close()
     return month_done
+
+# ================== DAILY SCHEDULER ==================
+
+def send_daily_to_all_users():
+    con = get_connection()
+    cur = con.cursor()
+    cur.execute("SELECT id, username, chat_id FROM Users WHERE chat_id IS NOT NULL")
+    users = cur.fetchall()
+    con.close()
+
+    for user_id, username, chat_id in users:
+        try:
+            text = get_daily_problem_text(user_id, username)
+            bot.send_message(chat_id, text)
+        except Exception as e:
+            print(f"Не удалось отправить {user_id}: {e}")
+
+
+def scheduler_loop():
+    schedule.every().day.at(DAILY_TIME).do(send_daily_to_all_users)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)

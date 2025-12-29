@@ -1,28 +1,20 @@
-
-import time
 import threading
-import schedule
 import telebot
+from services.everyday import scheduler_loop
 from telebot import types
-from dotenv import load_dotenv
-import os
-load_dotenv()
+from VibeCodeBot.config import BOT_TOKEN
 from services.everyday import (
     set_daily_rating,
     get_daily_problem_text,
     mark_daily_done,
 )
 from services.problem_picker import get_problem_by_rating
-from DB.core import init_db, add_or_update_user, get_connection
+from DB.core import init_db, add_or_update_user
 
 
 # ================== CONFIG ==================
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-DAILY_TIME = "09:00"
-
 bot = telebot.TeleBot(BOT_TOKEN)
-
 
 # ================== HELPERS ==================
 
@@ -51,31 +43,6 @@ def safe_int(value: str):
         return int(value)
     except ValueError:
         return None
-
-
-# ================== DAILY SCHEDULER ==================
-
-def send_daily_to_all_users():
-    con = get_connection()
-    cur = con.cursor()
-    cur.execute("SELECT id, username, chat_id FROM Users WHERE chat_id IS NOT NULL")
-    users = cur.fetchall()
-    con.close()
-
-    for user_id, username, chat_id in users:
-        try:
-            text = get_daily_problem_text(user_id, username)
-            bot.send_message(chat_id, text)
-        except Exception as e:
-            print(f"Не удалось отправить {user_id}: {e}")
-
-
-def scheduler_loop():
-    schedule.every().day.at(DAILY_TIME).do(send_daily_to_all_users)
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
 
 
 # ================== COMMANDS ==================
