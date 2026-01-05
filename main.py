@@ -1,114 +1,61 @@
 import threading
 import telebot
-from services.everyday import scheduler_loop
 from telebot import types
+from services.everyday import scheduler_loop
 from VibeCodeBot.config import BOT_TOKEN
-from services.everyday import (
-    set_daily_rating,
-    get_daily_problem_text,
-    mark_daily_done,
+from DB.core import init_db
+from keyboards.main_menu import rating_inline_keyboard
+from handlers.start import (
+    start_handler,
+    one_handler,
+    daily_handler,
+    done_handler,
+    daily_rating_callback,
+    daily_done_callback
 )
-from services.problem_picker import get_problem_by_rating
-from DB.core import init_db, add_or_update_user
 
 
 # ================== CONFIG ==================
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# ================== HELPERS ==================
+# ================== COMMANDS REGISTRATION ==================
 
-def get_user_data(message: types.Message):
-    user_id = message.from_user.id
-    username = (
-        message.from_user.username
-        or message.from_user.first_name
-        or "user"
-    )
-    chat_id = message.chat.id
-    return user_id, username, chat_id
+@bot.message_handler(commands=['start'])
+def handle_sart(message: types.Message):
+    start_handler(bot, message)
 
 
-def remember_chat(message: types.Message):
-    """Сохраняем chat_id для авторассылки."""
-    user_id, username, chat_id = get_user_data(message)
-    try:
-        add_or_update_user(user_id, username, chat_id=chat_id)
-    except TypeError:
-        pass
+@bot.message_handler(func=lambda m: m.text == "🎯 Одна задача")
+def handle_one(message: types.Message):
+    one_handler(bot, message)
 
 
-def safe_int(value: str):
-    try:
-        return int(value)
-    except ValueError:
-        return None
+@bot.message_handler(func=lambda m: m.text == "⚙️ Задать рейтинг")
+def handle_daily_rating(message: types.Message):
+    bot.send_message(message.chat.id,
+                     "Выберите рейтинг ежедневной задачи:",
+                     reply_markup=rating_inline_keyboard())
 
 
-# ================== COMMANDS ==================
-
-@bot.message_handler(commands=["start", "help"])
-def start(message: types.Message):
-    remember_chat(message)
-    bot.reply_to(
-        message,
-        "Команды:\n"
-        "/one <rating>\n"
-        "/daily_rating <rating>\n"
-        "/daily\n"
-        "/done"
-    )
+@bot.callback_query_handler(func=lambda c: c.data.startswith("daily_rating:"))
+def handle_daily_rating_callback(call):
+    daily_rating_callback(bot, call)
 
 
-@bot.message_handler(commands=["one"])
-def one(message: types.Message):
-    remember_chat(message)
-    parts = message.text.split(maxsplit=1)
-    if len(parts) < 2:
-        bot.reply_to(message, "Использование: /one <rating>")
-        return
-
-    rating = safe_int(parts[1])
-    if rating is None:
-        bot.reply_to(message, "Рейтинг должен быть числом")
-        return
-
-    user_id, username, chat_id = get_user_data(message)
-    text = get_problem_by_rating(rating, user_id, username)
-    bot.send_message(chat_id, text)
+@bot.message_handler(func=lambda m: m.text == "📌 Ежедневная задача")
+def handle_daily(message: types.Message):
+    daily_handler(bot, message)
 
 
-@bot.message_handler(commands=["daily_rating"])
-def daily_rating(message: types.Message):
-    remember_chat(message)
-    parts = message.text.split(maxsplit=1)
-    if len(parts) < 2:
-        bot.reply_to(message, "Использование: /daily_rating <rating>")
-        return
-
-    rating = safe_int(parts[1])
-    if rating is None:
-        bot.reply_to(message, "Рейтинг должен быть числом")
-        return
-
-    user_id, username, _ = get_user_data(message)
-    set_daily_rating(user_id, username, rating)
-    bot.reply_to(message, f"Ок. Ежедневный рейтинг: {rating}")
+@bot.message_handler(func=lambda m: m.text == "✅ Отметить выполненной")
+def handle_done(message: types.Message):
+    done_handler(bot, message)
 
 
-@bot.message_handler(commands=["daily"])
-def daily(message: types.Message):
-    remember_chat(message)
-    user_id, username, chat_id = get_user_data(message)
-    bot.send_message(chat_id, get_daily_problem_text(user_id, username))
-
-
-@bot.message_handler(commands=["done"])
-def done(message: types.Message):
-    remember_chat(message)
-    user_id, _, _ = get_user_data(message)
-    count = mark_daily_done(user_id)
-    bot.reply_to(message, f"Засчитано! В этом месяце: {count}")
+@bot.callback_query_handler(func=lambda c: c.data == "daily_done")
+def handle_daily_done_callback(call):
+    daily_done_callback(bot, call)
 
 
 # ================== MAIN ==================
