@@ -30,14 +30,7 @@ def init_db():
 
 
 def add_or_update_user(user_id: int, username: str, everyday_rating:int =  0, last_rating:int = 0):
-    """
-    Добавляет или обновляет пользователя в базе данных
 
-    Args:
-        user_id: ID пользователя
-        username: Имя пользователя
-        last_rating: Последний рейтинг задачи
-    """
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -51,12 +44,6 @@ def add_or_update_user(user_id: int, username: str, everyday_rating:int =  0, la
 
 
 def get_all_users():
-    """
-    Возвращает список всех пользователей
-
-    Returns:
-        list: Список кортежей с данными пользователей
-    """
     connection = get_connection()
     cursor = connection.cursor()
 
