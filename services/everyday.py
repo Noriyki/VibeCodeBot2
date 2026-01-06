@@ -7,7 +7,7 @@ from VibeCodeBot.DB import get_connection, add_or_update_user
 from VibeCodeBot.services.problem_picker import pick_random_by_rating, format_problem
 
 # Используем токен из config.py
-bot = telebot.TeleBot(BOT_TOKEN)
+bot = telebot.TeleBot('8580478028:AAHJaHbJ0iLKUvOpw5UwQxY95uEFz8erz6I')
 
 def set_daily_rating(user_id: int, username: str, rating: int):
     """Пользователь выбирает рейтинг ежедневной задачи."""
@@ -40,7 +40,7 @@ def get_daily_problem_text(user_id: int, username: str) -> str:
     row = cur.fetchone()
     if not row or row[0] != mkey:
         cur.execute(
-            "UPDATE Users SET month_key = ?, month_done = 0 WHERE id = ?",
+            "UPDATE Users SET month_key = ? WHERE id = ?",
             (mkey, user_id)
         )
 
@@ -50,7 +50,8 @@ def get_daily_problem_text(user_id: int, username: str) -> str:
     if row and row[0] == today and row[1]:
         con.commit()
         con.close()
-        return f"✅ Ежедневная задача на сегодня уже назначена: *{row[1]}*"
+        return f"✅ Ежедневная задача на сегодня уже назначена: *{row[1]}*"s
+
 
     # назначаем новую
     problem = pick_random_by_rating(everyday_rating)

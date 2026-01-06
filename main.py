@@ -5,9 +5,9 @@ from services.everyday import scheduler_loop
 from VibeCodeBot.config import BOT_TOKEN
 from DB.core import init_db
 from keyboards.main_menu import rating_inline_keyboard
+from keyboards.main_menu import rating_one_keyboard
 from handlers.start import (
-    start_handler,
-    one_handler,
+    start_handler, one_callback_handler,
     daily_handler,
     done_handler,
     daily_rating_callback,
@@ -28,8 +28,14 @@ def handle_sart(message: types.Message):
 
 @bot.message_handler(func=lambda m: m.text == "🎯 Одна задача")
 def handle_one(message: types.Message):
-    one_handler(bot, message)
+    bot.send_message(message.chat.id,
+                     "Выберите рейтинг для задачи:",
+                     reply_markup=rating_one_keyboard())
 
+@bot.callback_query_handler(func=lambda c: c.data.startswith("one_rating:"))
+def handle_one_rating_callback(call: types.CallbackQuery):
+    bot.answer_callback_query(call.id)  # убрать "loading"
+    one_callback_handler(bot, call)
 
 @bot.message_handler(func=lambda m: m.text == "⚙️ Задать рейтинг")
 def handle_daily_rating(message: types.Message):
@@ -47,15 +53,18 @@ def handle_daily_rating_callback(call):
 def handle_daily(message: types.Message):
     daily_handler(bot, message)
 
-
-@bot.message_handler(func=lambda m: m.text == "✅ Отметить выполненной")
-def handle_done(message: types.Message):
-    done_handler(bot, message)
-
-
 @bot.callback_query_handler(func=lambda c: c.data == "daily_done")
+
 def handle_daily_done_callback(call):
     daily_done_callback(bot, call)
+
+
+
+def callback_massage(callback):
+    if callback == "daily_done" or 'daily_done':
+        bot.delete_(callback.message.chat.id, callback.message.message_id)
+
+
 
 
 # ================== MAIN ==================

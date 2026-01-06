@@ -1,4 +1,4 @@
-from telebot import types
+from telebot import types, callback_data
 from VibeCodeBot.config import RATINGS
 
 def main_menu_keyboard():
@@ -9,13 +9,11 @@ def main_menu_keyboard():
 
     btn_daily = types.KeyboardButton("📌 Ежедневная задача")
     btn_one = types.KeyboardButton("🎯 Одна задача")
-    btn_done = types.KeyboardButton("✅ Отметить выполненной")
     btn_rating = types.KeyboardButton("⚙️ Задать рейтинг")
 
     keyboard.add(
         btn_daily,
         btn_one,
-        btn_done,
         btn_rating
     )
 
@@ -43,4 +41,17 @@ def daily_done_keyboard():
             callback_data="daily_done"
         )
     )
+    return keyboard
+
+def rating_one_keyboard():
+    keyboard = types.InlineKeyboardMarkup()
+
+    buttons = [
+        types.InlineKeyboardButton(
+            text=str(rating),
+            callback_data=f"one_rating:{rating}"
+        )
+        for rating in RATINGS
+    ]
+    keyboard.add(*buttons)
     return keyboard

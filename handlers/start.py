@@ -37,11 +37,15 @@ def safe_int(value: str):
     except ValueError:
         return None
 
+
 def daily_rating_callback(bot, call: types.CallbackQuery):
     _, rating_str = call.data.split(":")
     rating = int(rating_str)
 
-    user_id, username, _ = get_user_data(call.message)
+    # Получаем данные пользователя из call.from_user, а не из call.message
+    user_id = call.from_user.id
+    username = call.from_user.username or call.from_user.first_name or "user"
+
     set_daily_rating(user_id, username, rating)
 
     bot.answer_callback_query(
@@ -55,8 +59,11 @@ def daily_rating_callback(bot, call: types.CallbackQuery):
         text=f"✅ Ежедневный рейтинг: {rating}"
     )
 
+
 def daily_done_callback(bot, call):
     user_id = call.from_user.id
+    # Если нужен username:
+    username = call.from_user.username or call.from_user.first_name or "user"
 
     count = mark_daily_done(user_id)
 
@@ -76,7 +83,6 @@ def daily_done_callback(bot, call):
         message_id=call.message.message_id,
         text=new_text
     )
-
 
 
 # ================== COMMAND HANDLERS ==================
@@ -99,19 +105,16 @@ def start_handler(bot, message: types.Message):
     # )
 
 
-def one_handler(bot, message: types.Message):
-    remember_chat(message)
-    parts = message.text.split(maxsplit=1)
-    if len(parts) < 2:
-        bot.reply_to(message, "Использование: /one <rating>")
-        return
+def one_callback_handler(bot, call: types.CallbackQuery):
+    remember_chat(call.message)
 
-    rating = safe_int(parts[1])
+    _, rating_str = call.data.split(":", 1)
+    rating = safe_int(rating_str)
     if rating is None:
-        bot.reply_to(message, "Рейтинг должен быть числом")
+        bot.send_message(call.message.chat.id, "Рейтинг должен быть числом")
         return
 
-    user_id, username, chat_id = get_user_data(message)
+    user_id, username, chat_id = get_user_data(call.message)
     text = get_problem_by_rating(rating, user_id, username)
     bot.send_message(chat_id, text)
 

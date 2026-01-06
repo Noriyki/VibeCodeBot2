@@ -3,9 +3,6 @@ from telebot import types
 from VibeCodeBot.project.services import oldproblem
 from admin import admin_panel,broadcast
 
-TOKEN = "7412087237:AAHzrnzI_o2-tE_6VkjE1vJAzbJqwPEUUWk"
-bot = telebot.TeleBot(TOKEN)
-
 
 
 @bot.message_handler(commands=['start'])
