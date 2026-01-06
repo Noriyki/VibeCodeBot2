@@ -58,8 +58,6 @@ def handle_daily(message: types.Message):
 def handle_daily_done_callback(call):
     daily_done_callback(bot, call)
 
-
-
 def callback_massage(callback):
     if callback == "daily_done" or 'daily_done':
         bot.delete_(callback.message.chat.id, callback.message.message_id)

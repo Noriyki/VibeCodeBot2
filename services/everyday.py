@@ -50,7 +50,7 @@ def get_daily_problem_text(user_id: int, username: str) -> str:
     if row and row[0] == today and row[1]:
         con.commit()
         con.close()
-        return f"✅ Ежедневная задача на сегодня уже назначена: *{row[1]}*"s
+        return f"✅ Ежедневная задача на сегодня уже назначена: *{row[1]}*"
 
 
     # назначаем новую
