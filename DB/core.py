@@ -1,53 +1,92 @@
 import sqlite3
-from VibeCodeBot.DB.models import Users  # или относительный импорт
+
 
 def get_connection():
-    # Можно добавить check_same_thread=False, если будет доступ из разных потоков
     return sqlite3.connect("userdata.db")
+
 
 def init_db():
     connection = get_connection()
-    try:
-        cursor = connection.cursor()
-        cursor.execute(Users.get_table_definition())
-        connection.commit()
-    finally:
-        connection.close()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS Users (
+            id INTEGER PRIMARY KEY,
+            username TEXT NOT NULL,
+            chat_id INTEGER DEFAULT 0,
+            everyday_rating INTEGER DEFAULT 0,
+            last_problem_rating INTEGER DEFAULT 0,
+            daily_problem_key TEXT,
+            daily_date TEXT,
+            month_done INTEGER DEFAULT 0,
+            month_key TEXT
+        );
+        """
+    )
+
+    connection.commit()
+    connection.close()
+
 
 def add_or_update_user(
     user_id: int,
     username: str,
-    everyday_rating: int = 0,
-    last_rating: int = 0,
+    everyday_rating: int | None = None,
+    last_rating: int | None = None,
     chat_id: int | None = None,
 ):
     """
-    Обновляем пользователя, не затирая chat_id, если его не передали.
+    Вариант 1: без INSERT OR REPLACE.
+    Обновляем только те поля, которые переданы, чтобы не затирать everyday_rating.
     """
-    connection = get_connection()
-    try:
-        cursor = connection.cursor()
-        cursor.execute(
+    con = get_connection()
+    cur = con.cursor()
+
+    cur.execute("SELECT id FROM Users WHERE id = ?", (user_id,))
+    exists = cur.fetchone() is not None
+
+    if not exists:
+        cur.execute(
             """
-            INSERT INTO Users (id, username, everyday_rating, last_problem_rating, chat_id)
+            INSERT INTO Users (id, username, chat_id, everyday_rating, last_problem_rating)
             VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                username = excluded.username,
-                everyday_rating = excluded.everyday_rating,
-                last_problem_rating = excluded.last_problem_rating,
-                chat_id = COALESCE(excluded.chat_id, Users.chat_id)
             """,
-            (user_id, username, everyday_rating, last_rating, chat_id),
+            (
+                user_id,
+                username,
+                chat_id if chat_id is not None else 0,
+                everyday_rating if everyday_rating is not None else 0,
+                last_rating if last_rating is not None else 0,
+            ),
         )
-        connection.commit()
-    finally:
-        connection.close()
+    else:
+        # username обновляем всегда (пусть актуализируется)
+        cur.execute("UPDATE Users SET username = ? WHERE id = ?", (username, user_id))
+
+        if chat_id is not None:
+            cur.execute("UPDATE Users SET chat_id = ? WHERE id = ?", (chat_id, user_id))
+
+        if everyday_rating is not None:
+            cur.execute(
+                "UPDATE Users SET everyday_rating = ? WHERE id = ?",
+                (everyday_rating, user_id),
+            )
+
+        if last_rating is not None:
+            cur.execute(
+                "UPDATE Users SET last_problem_rating = ? WHERE id = ?",
+                (last_rating, user_id),
+            )
+
+    con.commit()
+    con.close()
+
 
 def get_all_users():
-    connection = get_connection()
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT id FROM Users")
-        return cursor.fetchall()
-    finally:
-        connection.close()
+    con = get_connection()
+    cur = con.cursor()
+    cur.execute("SELECT id FROM Users")
+    users = cur.fetchall()
+    con.close()
+    return users

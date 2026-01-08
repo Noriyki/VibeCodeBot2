@@ -1,6 +1,4 @@
-"""
-Модуль для работы с базой данных.
-"""
+
 
 from .core import (
     get_connection,
