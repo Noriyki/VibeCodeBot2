@@ -1,8 +1,8 @@
 import random
 import requests
+
 from VibeCodeBot.services.CodeforceApi import get_problems_by_rating
 from VibeCodeBot.DB import add_or_update_user
-
 
 
 def pick_random_by_rating(rating: int):
@@ -16,7 +16,12 @@ def format_problem(problem: dict) -> str:
     name = problem.get("name", "Без названия")
     rating = problem.get("rating", "N/A")
     link = f"https://codeforces.com/problemset/problem/{contest}/{index}"
-    return f"🎯 *Задача {contest}{index}: {name}*\n\n🔗 {link}\n\nРейтинг: {rating}"
+
+    return (
+        f"🎯 *Задача {contest}{index}: {name}*\n\n"
+        f"🔗 {link}\n\n"
+        f"Рейтинг: {rating}"
+    )
 
 
 def get_problem_by_rating(rating: int, user_id: int, username: str) -> str:

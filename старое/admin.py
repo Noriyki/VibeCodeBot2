@@ -1,10 +1,7 @@
 
 import sqlite3
 from telebot import TeleBot
-ADMIN_ID = [1479190231,1162481819,1220983765]
 
-TOKEN = "7412087237:AAHzrnzI_o2-tE_6VkjE1vJAzbJqwPEUUWk"
-bot = TeleBot(TOKEN)
 
 @bot.message_handler(commands=["admin"])
 def admin_panel(message):
