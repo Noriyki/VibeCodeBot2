@@ -26,7 +26,6 @@ def rating_inline_keyboard():
     keyboard.add(*buttons)
     return keyboard
 
-
 def rating_one_keyboard():
     keyboard = types.InlineKeyboardMarkup(row_width=3)
     buttons = [

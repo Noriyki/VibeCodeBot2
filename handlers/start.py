@@ -67,7 +67,7 @@ def daily_done_callback(bot, call: types.CallbackQuery):
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
         text=new_text,
-        reply_markup=None,  # убираем кнопку
+        reply_markup=None,
     )
 
 
@@ -109,9 +109,15 @@ def one_callback_handler(bot, call: types.CallbackQuery):
         bot.send_message(call.message.chat.id, "Рейтинг должен быть числом")
         return
 
+    bot.edit_message_reply_markup(
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+        reply_markup=None,
+    )
+
+
     user_id, username, chat_id = get_user_data(call.message)
     text = get_problem_by_rating(rating, user_id, username)
-
     bot.send_message(chat_id, text, reply_markup=one_done_keyboard())
 
 
