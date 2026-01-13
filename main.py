@@ -114,16 +114,17 @@ def broadcast_next(message):
 
 @bot.message_handler(func=lambda m: m.text == "🧮Статистика")
 def users_stats(message):
-    with sqlite3.connect("../userdata.db") as conn:
-        cur = conn.cursor()
-        rows = cur.execute("SELECT username, month_done FROM Users").fetchall()
-
+    con = get_connection()
+    cur = con.cursor()
+    cur.execute("SELECT username, month_done FROM Users")
+    rows = cur.fetchall()
     if not rows:
         bot.send_message(message.chat.id, "Статистика пользователей:\nПользователей нет.")
         return
 
     text = "Статистика пользователей:\n" + "\n".join(f"@{uid}: {name}" for uid, name in rows)
     bot.send_message(message.chat.id, text)  # chat_id, text [web:7]
+    con.close()
 
 if __name__ == "__main__":
     init_db()
