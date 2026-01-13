@@ -84,7 +84,7 @@ def broadcast(message):
 def broadcast_next(message):
     broadcast.message = message.text
     text_to_send = broadcast.message
-    connection = sqlite3.connect('../userdata.db')
+    connection = get_connection()
     cursor = connection.cursor()
     cursor.execute("SELECT id FROM Users")
     users = cursor.fetchall()
