@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       BOT_TOKEN: "8580478028:AAHJaHbJ0iLKUvOpw5UwQxY95uEFz8erz6I"
-      DAILY_TIME: "21:28"
+      DAILY_TIME: "09:00"
       TZ: "Europe/Moscow"
     volumes:
       - ./data:/data
