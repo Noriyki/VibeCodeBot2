@@ -84,7 +84,7 @@ def broadcast(message):
 def broadcast_next(message):
     broadcast.message = message.text
     text_to_send = broadcast.message
-    connection = sqlite3.connect('userdata.db')
+    connection = sqlite3.connect('../userdata.db')
     cursor = connection.cursor()
     cursor.execute("SELECT id FROM Users")
     users = cursor.fetchall()
@@ -114,7 +114,7 @@ def broadcast_next(message):
 
 @bot.message_handler(func=lambda m: m.text == "🧮Статистика")
 def users_stats(message):
-    with sqlite3.connect("userdata.db") as conn:
+    with sqlite3.connect("../userdata.db") as conn:
         cur = conn.cursor()
         rows = cur.execute("SELECT username, month_done FROM Users").fetchall()
 
