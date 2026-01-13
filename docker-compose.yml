@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  vibe-code-bot:
+    image: vibe-code-bot:latest
+    restart: unless-stopped
+    environment:
+      BOT_TOKEN: "8580478028:AAHJaHbJ0iLKUvOpw5UwQxY95uEFz8erz6I"
+      DAILY_TIME: "21:28"
+      TZ: "Europe/Moscow"
+    volumes:
+      - ./data:/data

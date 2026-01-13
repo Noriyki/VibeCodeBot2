@@ -1,4 +1,4 @@
-
+# VibeCodeBot/DB/__init__.py
 
 from .core import (
     get_connection,
@@ -7,9 +7,12 @@ from .core import (
     get_all_users,
 )
 
+from .models import Users
+
 __all__ = [
     "get_connection",
     "init_db",
     "add_or_update_user",
     "get_all_users",
+    "Users",
 ]

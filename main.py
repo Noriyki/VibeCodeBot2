@@ -4,8 +4,7 @@ from telebot import types
 from telebot.apihelper import copy_message
 
 
-from VibeCodeBot.config import ADMIN_IDS
-from VibeCodeBot.config import BOT_TOKEN
+from VibeCodeBot.config import ADMIN_IDS,BOT_TOKEN
 from VibeCodeBot.DB.core import init_db, get_connection
 from VibeCodeBot.services.everyday import scheduler_loop
 from VibeCodeBot.keyboards.main_menu import admin_menu
@@ -29,7 +28,7 @@ def start(message):
     if message.from_user.id in ADMIN_IDS:
         bot.send_message(message.chat.id, "👑 *Админ-панель*\n", reply_markup=admin_menu())
     else:
-        bot.send_message(message, start_handler(bot, message) )
+        start_handler(bot, message)
 
 
 @bot.message_handler(func=lambda m: m.text == "🎯 Одна задача")
@@ -125,16 +124,6 @@ def users_stats(message):
 
     text = "Статистика пользователей:\n" + "\n".join(f"@{uid}: {name}" for uid, name in rows)
     bot.send_message(message.chat.id, text)  # chat_id, text [web:7]
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
     init_db()

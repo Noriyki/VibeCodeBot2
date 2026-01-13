@@ -82,7 +82,6 @@ def add_or_update_user(
     con.commit()
     con.close()
 
-
 def get_all_users():
     con = get_connection()
     cur = con.cursor()
